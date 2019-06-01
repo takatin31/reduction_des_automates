@@ -1,8 +1,7 @@
 import java.util.*;
 
 int cpt = 0;
-int k = 0;
-TreeSet<Variable> list ;
+ArrayList<Variable> list ;
 Variable selectedVar;
 boolean varIsSelected;
 boolean reading = false;
@@ -11,14 +10,11 @@ boolean drawingCourbe = false;
 ArrayList<Iteration> iterations;
 Iteration iterationInProcess = null;
 boolean sameVar = false;
-Variable axiome = null;
-ArrayList<String> X;
 
 void setup()
 {
-	list = new TreeSet<Variable>();
+	list = new ArrayList<Variable>();
 	iterations = new ArrayList<Iteration>();
-	X = new ArrayList<String>();
 	selectedVar = null;
 	size(1200,600);
 }
@@ -30,23 +26,12 @@ void draw()
 	{
 		initDrawing();
 		textSize(13);
-
-		
-		TreeMap<Iteration, String> tempList = new TreeMap<Iteration, String>();
-
 		for (Iteration i : iterations)
 		{
-			
-
-			if (tempList.keySet().contains(i))
-			{
-				tempList.replace(i,tempList.get(i) + "/"+i.word);
-
-			}
-			else
-			{
-				tempList.put(i, i.word);
-			}	
+			if (i.begin.x < i.end.x)
+				dir = " ->";
+			else 
+				dir = " <-";	
 			
 			stroke(255);
 			noFill();
@@ -61,6 +46,9 @@ void draw()
 					curveVertex(i.end.x, i.end.y);
 					curveVertex(i.end.x, i.end.y);
 				endShape();
+				fill(255);
+				noStroke();
+				text(i.word+dir,i.begin.x + (i.end.x - i.begin.x)/2 , i.begin.y - map(i.end.x-i.begin.x, -1200, 1200, -100, 100) - 10);
 			}
 			else
 			{
@@ -72,11 +60,26 @@ void draw()
 					curveVertex(i.begin.x + 10, i.begin.y - 20);
 					curveVertex(i.begin.x + 10, i.begin.y - 20);
 				endShape();
+				fill(255);
+				noStroke();
+				text(i.word,i.begin.x , i.begin.y - 50);
 			}
+
+			
 		}
 
 		if (drawingCourbe)
 		{
+			int y;
+
+			if (selectedVar.x < mouseX)
+			{
+				y = 0;
+			}
+			else
+			{
+				y = 600;
+			}
 
 			stroke(255);
 			noFill();
@@ -106,32 +109,6 @@ void draw()
 				selectedVar.y = 50;
 		}
 	
-		for (Iteration i : tempList.keySet())
-		{
-			if (i.begin.x < i.end.x)
-				dir = " ->";
-			else 
-				dir = " <-";
-
-			if (i.begin != i.end)
-			{
-				fill(255);
-				noStroke();
-				if (tempList.get(i) != "")
-					text(tempList.get(i)+dir,i.begin.x + (i.end.x - i.begin.x)/2 , i.begin.y - map(i.end.x-i.begin.x, -1200, 1200, -100, 100) - 10);
-				else 
-					text("ɛ"+dir,i.begin.x + (i.end.x - i.begin.x)/2 , i.begin.y - map(i.end.x-i.begin.x, -1200, 1200, -100, 100) - 10);
-			}
-			else
-			{
-				fill(255);
-				noStroke();
-				if (tempList.get(i) != "")
-					text(tempList.get(i),i.begin.x , i.begin.y - 50);
-				else 
-					text("ɛ",i.begin.x , i.begin.y - 50);
-			}
-		}
 
 		for (Variable v : list)
 		{
@@ -169,71 +146,21 @@ void initDrawing()
 	rect(1100, 60, 20, 20);
 	fill(#FF0008);
 	rect(1100, 90, 20, 20);
-	fill(255);
-	textSize(12);
-	text("Developpé par Hammas Ali Chérif", 1000, 590);
 
 }
 
-void getAccessibleElement(Variable s)
+void getAccessibleElement(Collection<Variable> list, Variable s)
 {
 	list.add(s);
 	for (Iteration i : iterations)
 	{
-		if (i.begin == s && !list.contains(i.end))
+		if (i.begin == s)
 		{
-			getAccessibleElement(i.end);
-		}
-	}
-		
-}
-
-void getCo_accessibleElement()
-{
-	TreeSet<Variable> list2 = new TreeSet<Variable>();
-	for (Variable v : list)
-	{	
-		if (v.end)
-		{
-			list2.add(v);
-		}
-	}
-	
-	list = new TreeSet<Variable>();
-	for (Variable v : list2)
-	{	
-		getCo_accessibleElement2(v);
-	}
-}
-
-void getCo_accessibleElement2(Variable s)
-{
-	list.add(s);
-	for (Iteration i : iterations)
-	{			
-		if (i.end == s && !list.contains(i.begin))
-		{
-			getCo_accessibleElement2(i.begin);
+			list.add(i.end);
+			getAccessibleElement(list, i.end);
 		}
 	}
 }
-
-
-void clearIterations()
-{
-	ArrayList<Iteration> iterations2 = new ArrayList<Iteration>();
-	for (Iteration i : iterations)
-	{
-		if (list.contains(i.begin) && list.contains(i.end))
-		{
-			iterations2.add(i);
-		}
-	}
-	iterations = new ArrayList<Iteration>();
-	iterations = iterations2;
-}
-
-
 
 void keyPressed()
 {
@@ -254,7 +181,6 @@ void keyPressed()
 		else 
 		{
 			iterationInProcess.word = wordRead;
-			X.add(wordRead);
 			iterations.add(iterationInProcess);
 			reading = false;
 			wordRead = "";  
@@ -274,23 +200,19 @@ void mousePressed()
 		{	
 			if (mouseX > 400 && mouseX < 800 && mouseY > 0 && mouseY < 30) 
 			{
-				
-				list = new TreeSet<Variable>();
-
-				getAccessibleElement(axiome);
-				clearIterations();
-				getCo_accessibleElement();
-				clearIterations();
-				
-				
-				
+				TreeSet<Variable> liste = new TreeSet<Variable>();
+				getAccessibleElement(liste, list.get(0));
+				for (Variable v : liste)
+				{
+					System.out.println(v.name);
+				}
 			}
 			else
 			{ 
 				if (mouseX > 800 && mouseX < 1200 && mouseY > 0 && mouseY < 30) 
 				{
 					cpt = 0;
-					list = new TreeSet<Variable>();
+					list = new ArrayList<Variable>();
 					wordRead ="";
 					varIsSelected = false;
 					selectedVar = null;
@@ -330,7 +252,6 @@ void mousePressed()
 	{
 		drawingCourbe = false;
 		reading = false;
-		selectedVar.end = true;
 	}
 
 	if (!varIsSelected && found)
@@ -359,10 +280,7 @@ void addVar()
 	int y = (cpt/25)*40 + 55;
 	Variable v = new Variable("S"+cpt, x, y);
 	if (cpt == 0)
-	{
 		v.begin = true;
-		axiome = v;
-	}
 	list.add(v);
 	cpt ++;
 }
@@ -376,7 +294,7 @@ void readWord()
 	rect(450, 270, 300, 60);
 	fill(255);
 	textSize(15);
-	text("Entrer le mot a ajouter", 510, 290);
+	text("Entrer le mot a concaténer", 500, 290);
 	fill(#2300FF);
 	text(wordRead, 600 - wordRead.length()*3, 320);
 }

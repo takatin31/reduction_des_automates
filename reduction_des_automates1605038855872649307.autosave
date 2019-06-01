@@ -1,0 +1,225 @@
+int cpt = 0;
+ArrayList<Variable> list ;
+Variable selectedVar;
+boolean varIsSelected;
+boolean reading = true;
+String wordRead = "";
+boolean drawingCourbe = false;
+ArrayList<Iteration> iterations;
+
+void setup()
+{
+	list = new ArrayList<Variable>();
+	iterations = new ArrayList<Iteration>();
+	selectedVar = null;
+	size(1200,600);
+}
+
+void draw()
+{
+	if (!reading)
+		initDrawing();
+	else
+		readWord();
+
+	stroke(255);
+	noFill();
+
+	for (Iteration i : iterations)
+	{
+		beginShape();
+		vertex(i.begin.x, i.begin.y);
+		//if (i.begin.x < i.end.x)
+			bezierVertex(i.begin.x, i.begin.y, 300, map(Math.abs(i.begin.x-i.end.x), 0, 1200, 0, 800), i.end.x, i.end.y);
+		//else
+		//	bezierVertex(i.begin.x, i.begin.y, 300, 600, i.end.x, i.end.y);
+		endShape();
+	}
+
+	if (drawingCourbe)
+	{
+		int y;
+
+		if (selectedVar.x < mouseX)
+		{
+			y = 0;
+		}
+		else
+		{
+			y = 600;
+		}
+
+		
+		/*beginShape();
+		vertex(selectedVar.x, selectedVar.y);
+		bezierVertex(selectedVar.x, selectedVar.y, Math.abs(selectedVar.x-mouseX), map(Math.abs(selectedVar.x-mouseX), 0, 1200, 0, 800), mouseX, mouseY);
+		endShape();*/
+		curve(selectedVar.x, selectedVar.y, 25, 26, 73, 24);
+	}
+
+	if (varIsSelected)
+	{
+		selectedVar.x = mouseX;
+		if (selectedVar.x > 1050)
+			selectedVar.x = 1050;
+		if (selectedVar.x < 20)
+			selectedVar.x = 20;
+		selectedVar.y = mouseY;
+		if (selectedVar.y > 580)
+			selectedVar.y = 580;
+		if (selectedVar.y < 50)
+			selectedVar.y = 50;
+	}
+	
+
+	for (Variable v : list)
+	{
+		v.draw();
+	}
+}
+
+void initDrawing()
+{
+	background(0);
+	fill(#bfbfbf);
+	strokeWeight(2);
+	stroke(255);
+	rect(0, 0, 400, 30);
+	rect(400, 0, 400, 30);
+	rect(800, 0, 400, 30);
+	noStroke();
+	fill(0);
+	textSize(20);
+	text("Ajouter une variable", 100, 22);
+	text("Reduction de l'Automate", 490, 22);
+	text("Suppression de l'Automate", 890, 22);
+  	fill(255);
+	textSize(12);
+	text("L'axiome", 1130, 75);
+	text("Variable є ₣", 1130, 105);
+	stroke(255);
+	strokeWeight(1);
+	fill(#1212FF);
+	rect(1100, 60, 20, 20);
+	fill(#FF0008);
+	rect(1100, 90, 20, 20);
+
+}
+
+void keyPressed()
+{
+	if (reading)
+	{
+		if (key != '\n')
+		{
+			if (wordRead.length() < 10 && ((key >= 'a' && key <= 'z') || (key >= '0' && key <= '9')))
+				wordRead += key;
+			else 
+			{
+				if (key == 8 && wordRead.length() > 0) 
+				{
+					wordRead = wordRead.substring(0, wordRead.length()-1);
+				}
+			}
+		}
+		else 
+			reading = false;  
+	}
+}
+
+void mousePressed()
+{
+	if ((mouseButton == LEFT))
+	{
+		if (mouseX > 0 && mouseX < 400 && mouseY > 0 && mouseY < 30)
+		{
+			addVar();					
+		}
+		else 
+		{	
+			if (mouseX > 400 && mouseX < 800 && mouseY > 0 && mouseY < 30) 
+			{
+				
+			}
+			else
+			{ 
+				if (mouseX > 800 && mouseX < 1200 && mouseY > 0 && mouseY < 30) 
+				{
+					cpt = 0;
+					list = new ArrayList<Variable>();
+					wordRead ="";
+					varIsSelected = false;
+					selectedVar = null;
+					drawingCourbe = false;
+				}
+			}
+		}
+	}
+
+	boolean found = false;
+	for (Variable v : list)
+	{
+		if (mouseX < v.x + 20 && mouseX > v.x - 20 && mouseY < v.y + 20 && mouseY > v.y - 20)
+		{
+			
+			if(mouseButton == LEFT)
+				varIsSelected = !varIsSelected;
+			else
+			if (mouseButton == RIGHT) 
+			{
+				if (drawingCourbe)
+				{
+					iterations.add(new Iteration(selectedVar, v, wordRead));
+				}
+				drawingCourbe = !drawingCourbe;
+			}
+			selectedVar = v;
+			found = true;
+			break;
+		}
+	}
+
+	if (!varIsSelected && found)
+	{
+		for (Variable v : list)
+		{
+			if (v != selectedVar && dist(v.x, v.y, selectedVar.x, selectedVar.y) < 40)
+			{
+				if (selectedVar.x < v.x)
+					selectedVar.x -= 40;
+				else
+					selectedVar.x += 40;
+
+				if (selectedVar.y < v.y)
+					selectedVar.y -= 40;
+				else
+					selectedVar.y += 40;
+			}
+		}
+	}
+}
+
+void addVar()
+{
+	int x = (cpt%25)*40 + 20;
+	int y = (cpt/25)*40 + 55;
+	Variable v = new Variable("S"+cpt, x, y);
+	if (cpt == 0)
+		v.begin = true;
+	list.add(v);
+	cpt ++;
+}
+
+void readWord()
+{
+	background(#B3B3B3);
+	fill(#1D1D1D);
+	stroke(255);
+	strokeWeight(2);
+	rect(450, 270, 300, 60);
+	fill(255);
+	textSize(15);
+	text("Entrer le mot a concaténer", 500, 290);
+	fill(#2300FF);
+	text(wordRead, 600 - wordRead.length()*3, 320);
+}
